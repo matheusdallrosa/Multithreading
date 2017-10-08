@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
 #include <pthread.h>
 
 #include <vector>
@@ -26,6 +28,7 @@ pthread_cond_t waiting_content = PTHREAD_COND_INITIALIZER;
 void *reading_procedure(void *args){
   int reader_id = *((int *)args);
   for(int t = 0; t < READ_WRITE_TIMES; t++){
+    usleep(1000 * (random() % READERS + WRITERS));
     pthread_mutex_lock(&active_readers_mutex);
     while(!content.size()){
       pthread_cond_wait(&waiting_content,&active_readers_mutex);
@@ -59,6 +62,7 @@ void *reading_procedure(void *args){
 void *writing_procedure(void *args){
   int writer_id = *((int *)args);
   for(int t = 0; t < READ_WRITE_TIMES; t++){
+    usleep(1000 * (random() % READERS + WRITERS));
     pthread_mutex_lock(&active_readers_mutex);
     if(content.size() == CONTENT && !finish_writers){
       pthread_cond_wait(&waiting_writer,&active_readers_mutex);
@@ -87,6 +91,7 @@ struct Reader{
 }readers[WRITERS];
 
 int main(void){
+  srandom((unsigned int)time(NULL));
   for(int i = 0; i < READERS; i++){
     readers[i].id = i;
     pthread_create(&readers[i].thread,NULL,reading_procedure,&readers[i].id);
